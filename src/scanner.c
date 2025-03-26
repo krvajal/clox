@@ -36,15 +36,18 @@ static bool isAlpha(char c) {
 
 static TokenType checkKeyword(int start, int length, const char* rest,
                               TokenType type) {
-    if (scanner.current - scanner.start == start + length &&
-        memcmp(scanner.start + start, rest, length)) {
+    int tokenLength = scanner.current - scanner.start;
+    const expectedLength = start + length;
+
+    if (tokenLength == expectedLength &&
+        memcmp(scanner.start + start, rest, length) == 0) {
         return type;
     }
+
     return TOKEN_IDENTIFIER;
 }
 
 static TokenType identiferType() {
-    return TOKEN_IDENTIFIER;
     switch (scanner.start[0]) {
         case 'a':
             return checkKeyword(1, 2, "nd", TOKEN_AND);
