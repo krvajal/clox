@@ -168,18 +168,31 @@ static void binary() {
     }
 }
 
-ParseRule rules[] = {
-    [TOKEN_LEFT_PAREN] = {grouping, NULL, PREC_NONE},
-    [TOKEN_SLASH] = {NULL, binary, PREC_NONE},
-    [TOKEN_MINUS] = {unary, binary, PREC_TERM},
-    [TOKEN_PLUS] = {NULL, binary, PREC_TERM},
-    [TOKEN_STAR] = {NULL, binary, PREC_FACTOR},
-    [TOKEN_NUMBER] = {number, NULL, PREC_NONE},
-    [TOKEN_BANG] = {unary, NULL, PREC_NONE},
-    [TOKEN_EOF] = {NULL, NULL, PREC_NONE},
-    [TOKEN_IF] = {NULL, NULL, PREC_NONE},
-    [TOKEN_IDENTIFIER] = {NULL, NULL, PREC_NONE},
-};
+void literal() {
+    switch (parser.previous.type) {
+        case TOKEN_FALSE:
+            return emitByte(OP_FALSE);
+
+        case TOKEN_TRUE:
+            return emitByte(OP_TRUE);
+        case TOKEN_NIL:
+            return emitByte(OP_NIL);
+    }
+}
+
+ParseRule rules[] = {[TOKEN_LEFT_PAREN] = {grouping, NULL, PREC_NONE},
+                     [TOKEN_SLASH] = {NULL, binary, PREC_NONE},
+                     [TOKEN_MINUS] = {unary, binary, PREC_TERM},
+                     [TOKEN_PLUS] = {NULL, binary, PREC_TERM},
+                     [TOKEN_STAR] = {NULL, binary, PREC_FACTOR},
+                     [TOKEN_NUMBER] = {number, NULL, PREC_NONE},
+                     [TOKEN_BANG] = {unary, NULL, PREC_NONE},
+                     [TOKEN_EOF] = {NULL, NULL, PREC_NONE},
+                     [TOKEN_IF] = {NULL, NULL, PREC_NONE},
+                     [TOKEN_IDENTIFIER] = {NULL, NULL, PREC_NONE},
+                     [TOKEN_TRUE] = {literal, NULL, PREC_NONE},
+                     [TOKEN_FALSE] = {literal, NULL, PREC_NONE},
+                     [TOKEN_NIL] = {literal, NULL, PREC_NONE}};
 
 static ParseRule* getRule(TokenType tokenType) { return &rules[tokenType]; }
 
