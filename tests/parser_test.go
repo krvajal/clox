@@ -213,6 +213,25 @@ func TestParseExpressions(t *testing.T) {
 				Type:   TokenName,
 				Lexeme: "a",
 			}, {
+				Type:   TokenPlus,
+				Lexeme: "+",
+			}, {
+				Type:   TokenName,
+				Lexeme: "b",
+			}, {
+				Type:   TokenLeftParen,
+				Lexeme: "(",
+			}, {
+				Type:   TokenRightParen,
+				Lexeme: ")",
+			}},
+			expected: "(a)+((b)())",
+		},
+		{
+			tokens: []Token{{
+				Type:   TokenName,
+				Lexeme: "a",
+			}, {
 				Type:   TokenLeftParen,
 				Lexeme: "(",
 			}, {

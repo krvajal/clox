@@ -5,9 +5,9 @@ type Precedence int
 const (
 	PrecedenceNone Precedence = iota
 	PrecedenceAssignment
-	PrecedenceCall
 	PrecedenceSum
 	PrecedenceProd
+	PrecedenceCall
 	PrecedencePrefix
 	PredencePosfix
 )

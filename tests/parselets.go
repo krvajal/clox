@@ -17,7 +17,7 @@ type InfixParselet func(parser *Parser, left Expression, token Token) Expression
 func CallParselet(parser *Parser, left Expression, token Token) Expression {
 	var args []Expression
 	for !parser.match(TokenRightParen) {
-		args = append(args, parser.parsePrecedence((int)(PrecedenceCall+1)))
+		args = append(args, parser.parsePrecedence(0))
 		if parser.match(TokenComma) {
 			continue
 		}
