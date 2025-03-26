@@ -25,4 +25,9 @@ void freeValueArray(ValueArray* array) {
     initValueArray(array);
 }
 
-void printValue(Value value) { printf("%g", value); }
+void printValue(Value value) {
+    if (IS_NUMBER(value)) {
+        printf("%g", AS_NUMBER(value));
+    }
+    // TODO: add bool
+}

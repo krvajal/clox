@@ -12,6 +12,7 @@
         "type_traits": "cpp",
         "utility": "cpp",
         "chrono": "cpp",
-        "ratio": "cpp"
+        "ratio": "cpp",
+        "random": "c"
     }
 }
