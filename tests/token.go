@@ -11,6 +11,9 @@ const (
 	TokenEof
 	TokenSlash
 	TokenStar
+	TokenLeftParen
+	TokenRightParen
+	TokenComma
 )
 
 type Token struct {

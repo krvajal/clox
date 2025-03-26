@@ -55,3 +55,28 @@ func NewBinaryExpression(operator Token, left Expression, right Expression) Bina
 func (expr BinaryExpression) ToString() string {
 	return "(" + expr.left.ToString() + ")" + expr.operator.Lexeme + "(" + expr.right.ToString() + ")"
 }
+
+type CallExpression struct {
+	callee    Expression
+	arguments []Expression
+}
+
+// NewCallExpression creates a new CallExpression.
+func NewCallExpression(callee Expression, arguments []Expression) CallExpression {
+	return CallExpression{
+		callee:    callee,
+		arguments: arguments,
+	}
+}
+
+// ToString implements Expression.
+func (expr CallExpression) ToString() string {
+	args := ""
+	for i, arg := range expr.arguments {
+		if i > 0 {
+			args += ","
+		}
+		args += arg.ToString()
+	}
+	return "(" + expr.callee.ToString() + ")(" + args + ")"
+}

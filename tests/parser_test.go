@@ -167,6 +167,83 @@ func TestParseExpressions(t *testing.T) {
 			},
 			expected: "(a)*(-(b))",
 		},
+		{
+			tokens: []Token{{
+				Type:   TokenName,
+				Lexeme: "a",
+			}, {
+				Type:   TokenLeftParen,
+				Lexeme: "(",
+			}, {
+				Type:   TokenName,
+				Lexeme: "b",
+			}, {
+				Type:   TokenComma,
+				Lexeme: ",",
+			}, {
+				Type:   TokenName,
+				Lexeme: "c",
+			}, {
+				Type:   TokenPlus,
+				Lexeme: "+",
+			}, {
+				Type:   TokenName,
+				Lexeme: "d",
+			}, {
+				Type:   TokenRightParen,
+				Lexeme: ")",
+			}},
+			expected: "(a)(b,(c)+(d))",
+		},
+		{
+			tokens: []Token{{
+				Type:   TokenName,
+				Lexeme: "a",
+			}, {
+				Type:   TokenLeftParen,
+				Lexeme: "(",
+			}, {
+				Type:   TokenRightParen,
+				Lexeme: ")",
+			}},
+			expected: "(a)()",
+		},
+		{
+			tokens: []Token{{
+				Type:   TokenName,
+				Lexeme: "a",
+			}, {
+				Type:   TokenLeftParen,
+				Lexeme: "(",
+			}, {
+				Type:   TokenRightParen,
+				Lexeme: ")",
+			},
+				{
+					Type:   TokenLeftParen,
+					Lexeme: "(",
+				}, {
+					Type:   TokenRightParen,
+					Lexeme: ")",
+				},
+			},
+			expected: "((a)())()",
+		},
+		{
+			tokens: []Token{
+				{
+					Type:   TokenLeftParen,
+					Lexeme: "(",
+				}, {
+					Type:   TokenName,
+					Lexeme: "a",
+				}, {
+					Type:   TokenRightParen,
+					Lexeme: ")",
+				},
+			},
+			expected: "a",
+		},
 	}
 
 	for _, test := range tests {

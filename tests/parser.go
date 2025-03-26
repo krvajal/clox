@@ -14,14 +14,18 @@ func NewParser(tokens []Token) *Parser {
 		tokens: tokens,
 	}
 	p.register(TokenName, NameParselet)
+	p.register(TokenLeftParen, GroupParselet)
 	p.registerPrefix(TokenPlus)
 	p.registerPrefix(TokenBang)
 	p.registerPrefix(TokenMinus)
 	p.registerPrefix(TokenTilde)
-	p.registerInfix(TokenPlus)
-	p.registerInfix(TokenMinus)
-	p.registerInfix(TokenSlash)
-	p.registerInfix(TokenStar)
+	///
+	p.registerBinary(TokenPlus)
+	p.registerBinary(TokenMinus)
+	p.registerBinary(TokenSlash)
+	p.registerBinary(TokenStar)
+
+	p.registerInfix(TokenLeftParen, CallParselet)
 	return p
 }
 
@@ -33,12 +37,16 @@ func (p *Parser) registerPrefix(tok TokenType) {
 	p.register(tok, PrefixParselet)
 }
 
-func (p *Parser) registerInfix(tok TokenType) {
-	p.infix[tok] = func(p *Parser, left Expression, tok Token) Expression {
+func (p *Parser) registerInfix(tok TokenType, parselet InfixParselet) {
+	p.infix[tok] = parselet
+}
+
+func (p *Parser) registerBinary(tok TokenType) {
+	p.registerInfix(tok, func(p *Parser, left Expression, tok Token) Expression {
 		precedence := int(precedences[tok.Type])
 		right := p.parsePrecedence(precedence + 1)
 		return NewBinaryExpression(tok, left, right)
-	}
+	})
 }
 
 func (p *Parser) isAtEnd() bool {
@@ -65,6 +73,14 @@ func (p *Parser) getPrecedence() int {
 	return int(precedences[p.peek().Type])
 }
 
+func (p *Parser) match(tok TokenType) bool {
+	if p.peek().Type == tok {
+		p.consume()
+		return true
+	}
+	return false
+}
+
 func (p *Parser) parsePrecedence(precedence int) Expression {
 	token := p.consume()
 	parselet := p.prefix[token.Type]
@@ -88,6 +104,12 @@ func (p *Parser) parsePrecedence(precedence int) Expression {
 		expr = infixParselet(p, expr, token)
 	}
 	return expr
+}
+
+func (p *Parser) expect(tok TokenType) {
+	if !p.match(tok) {
+		panic("Expected token")
+	}
 }
 
 func (p *Parser) ParseExpression() Expression {

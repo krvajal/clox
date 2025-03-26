@@ -13,3 +13,20 @@ func NameParselet(parser *Parser, token Token) Expression {
 }
 
 type InfixParselet func(parser *Parser, left Expression, token Token) Expression
+
+func CallParselet(parser *Parser, left Expression, token Token) Expression {
+	var args []Expression
+	for !parser.match(TokenRightParen) {
+		args = append(args, parser.parsePrecedence((int)(PrecedenceCall+1)))
+		if parser.match(TokenComma) {
+			continue
+		}
+	}
+	return NewCallExpression(left, args)
+}
+
+func GroupParselet(parser *Parser, token Token) Expression {
+	expr := parser.ParseExpression()
+	parser.expect(TokenRightParen)
+	return expr
+}
