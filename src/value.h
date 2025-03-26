@@ -22,7 +22,7 @@ typedef struct {
 #define NUMBER_VAL(n) ((Value){VAL_NUMBER, {.number = n}})
 
 #define IS_BOOL(value) ((value).type == VAL_BOOL)
-#define ISN_NIL(value) ((value).type == VAL_NIL)
+#define IS_NIL(value) ((value).type == VAL_NIL)
 #define IS_NUMBER(value) ((value).type == VAL_NUMBER)
 
 #define AS_BOOL(value) ((value).as.boolean)

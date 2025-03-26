@@ -28,6 +28,10 @@ void freeValueArray(ValueArray* array) {
 void printValue(Value value) {
     if (IS_NUMBER(value)) {
         printf("%g", AS_NUMBER(value));
+    } else if (IS_BOOL(value)) {
+        printf(AS_BOOL(value) ? "true" : "false");
+    } else if (IS_NIL(value)) {
+        printf("nil");
     }
     // TODO: add bool
 }
