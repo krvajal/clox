@@ -13,6 +13,10 @@ void initVM() { resetStack(); }
 void freeVM() {}
 
 static Value peek(int distance) { return vm.stackTop[-1 - distance]; }
+static bool isFalsey(Value value) {
+    return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+}
+
 static InterpretResult run() {
 #define READ_BYTE() (*vm.ip++)
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
@@ -53,6 +57,9 @@ static InterpretResult run() {
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 push(NUMBER_VAL(-AS_NUMBER(pop())));
+                break;
+            case OP_NOT:
+                push(BOOL_VAL(isFalsey(pop())));
                 break;
             case OP_ADD:
                 BINARY_OP(NUMBER_VAL, +);
