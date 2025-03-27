@@ -1,7 +1,11 @@
 #include "vm.h"
 
+#include <stdlib.h>
+
 #include "compiler.h"
 #include "debug.h"
+#include "memory.h"
+#include "object.h"
 #include "stdio.h"
 #include "value.h"
 // singleton VM instance
@@ -9,12 +13,31 @@ VM vm;
 
 static void resetStack() { vm.stackTop = vm.stack; }
 
-void initVM() { resetStack(); }
-void freeVM() {}
+void initVM() {
+    resetStack();
+    vm.objects = NULL;
+}
+
+void freeVM() {
+    freeObjects(vm.objects);
+    vm.objects = NULL;
+}
 
 static Value peek(int distance) { return vm.stackTop[-1 - distance]; }
 static bool isFalsey(Value value) {
     return IS_NIL(value) || (IS_BOOL(value) && !AS_BOOL(value));
+}
+
+static void concatenate() {
+    ObjString *b = AS_STRING(pop());
+    ObjString *a = AS_STRING(pop());
+    int length = a->length + b->length;
+    char *str = ALLOCATE(char, length + 1);
+    memcpy(str, a->chars, a->length);
+    memcpy(str + a->length, b->chars, b->length);
+    str[length] = '\0';
+    ObjString *r = takeString(str, length);
+    push(OBJ_VAL(r));
 }
 
 static InterpretResult run() {
@@ -74,7 +97,11 @@ static InterpretResult run() {
                 push(BOOL_VAL(isFalsey(pop())));
                 break;
             case OP_ADD:
-                BINARY_OP(NUMBER_VAL, +);
+                if (IS_STRING(peek(0)) && IS_STRING(peek(1))) {
+                    concatenate();
+                } else if (IS_NUMBER(peek(0)) && IS_NUMBER(peek(1))) {
+                    BINARY_OP(NUMBER_VAL, +);
+                }
                 break;
             case OP_SUBTRACT:
                 BINARY_OP(NUMBER_VAL, -);

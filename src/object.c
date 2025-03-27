@@ -3,10 +3,18 @@
 #include <string.h>
 
 #include "memory.h"
+#include "vm.h"
+
+extern VM vm;
 
 static Obj *allocateObject(size_t size, ObjType type) {
     Obj *obj = (Obj *)reallocate(NULL, 0, size);
     obj->type = type;
+
+    // keep a linked list of objects
+    obj->next = vm.objects;
+    vm.objects = obj;
+
     return obj;
 }
 
@@ -24,4 +32,8 @@ ObjString *copyString(const char *chars, int length) {
     memcpy(heapChars, chars, length);
     heapChars[length] = '\0';
     return allocateString(heapChars, length);
+}
+
+ObjString *takeString(const char *chars, int length) {
+    return allocateString(chars, length);
 }
