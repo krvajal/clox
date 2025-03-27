@@ -4,6 +4,7 @@
 #include <stdlib.h>
 
 #include "common.h"
+#include "object.h"
 #include "scanner.h"
 #include "value.h"
 
@@ -148,6 +149,12 @@ static void unary() {
     }
 }
 
+static void string() {
+    char* stringStart = parser.previous.start + 1;
+    int stringLength = parser.previous.length - 2;
+    emitConstant(OBJ_VAL(copyString(stringStart, stringLength)));
+}
+
 static void binary() {
     TokenType operatorType = parser.previous.type;
     ParseRule* rule = getRule(operatorType);
@@ -222,6 +229,7 @@ ParseRule rules[] = {
     [TOKEN_FALSE] = {literal, NULL, PREC_NONE},
     [TOKEN_NIL] = {literal, NULL, PREC_NONE},
     [TOKEN_BANG] = {unary, NULL, PREC_NONE},
+    [TOKEN_STRING] = {string, NULL, PREC_NONE},
 };
 
 static ParseRule* getRule(TokenType tokenType) { return &rules[tokenType]; }

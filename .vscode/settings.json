@@ -13,6 +13,7 @@
         "utility": "cpp",
         "chrono": "cpp",
         "ratio": "cpp",
-        "random": "c"
+        "random": "c",
+        "system_error": "cpp"
     }
 }

@@ -12,5 +12,6 @@
     reallocate(pointer, sizeof(type) * (oldCount), 0)
 
 void* reallocate(void* pointer, size_t oldSize, size_t newSize);
+#define ALLOCATE(type, count) (type*)reallocate(NULL, 0, sizeof(type) * (count))
 
 #endif

@@ -1,7 +1,9 @@
 #include "value.h"
 
+#include <stdio.h>
+
 #include "memory.h"
-#include "stdio.h"
+#include "object.h"
 
 void initValueArray(ValueArray* array) {
     array->capacity = 0;
@@ -25,6 +27,16 @@ void freeValueArray(ValueArray* array) {
     initValueArray(array);
 }
 
+void printObj(Value value) {
+    switch (OBJ_TYPE(value)) {
+        case OBJ_STRING:
+            printf("%s", AS_CSTRING(value));
+            break;
+        default:
+            printf("unknonw object type in printObj");
+    }
+}
+
 void printValue(Value value) {
     if (IS_NUMBER(value)) {
         printf("%g", AS_NUMBER(value));
@@ -32,6 +44,8 @@ void printValue(Value value) {
         printf(AS_BOOL(value) ? "true" : "false");
     } else if (IS_NIL(value)) {
         printf("nil");
+    } else if (IS_OBJ(value)) {
+        printObj(value);
     }
 }
 
@@ -46,6 +60,12 @@ bool valuesEqual(Value a, Value b) {
             return true;
         case VAL_NUMBER:
             return AS_NUMBER(a) == AS_NUMBER(b);
+        case VAL_OBJ: {
+            ObjString* aString = AS_STRING(a);
+            ObjString* bString = AS_STRING(b);
+            return aString->length == bString->length &&
+                   memcmp(aString->chars, bString->chars, aString->length) == 0;
+        }
         default:
             return false;
     }
