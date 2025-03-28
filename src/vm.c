@@ -16,9 +16,11 @@ static void resetStack() { vm.stackTop = vm.stack; }
 void initVM() {
     resetStack();
     vm.objects = NULL;
+    initMap(&vm.strings);
 }
 
 void freeVM() {
+    freeMap(&vm.strings);
     freeObjects(vm.objects);
     vm.objects = NULL;
 }
@@ -115,6 +117,13 @@ static InterpretResult run() {
             case OP_CONSTANT:
                 Value constant = READ_CONSTANT();
                 push(constant);
+                break;
+            case OP_POP:
+                pop();
+                break;
+            case OP_PRINT:
+                printValue(pop());
+                printf("\n");
                 break;
         }
     }

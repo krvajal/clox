@@ -19,4 +19,6 @@ void freeMap(Map* map);
 bool mapSet(Map* map, ObjString* key, Value value);
 bool mapGet(Map* map, ObjString* key, Value* outValue);
 bool mapDelete(Map* map, ObjString* key);
+ObjString* mapFindString(Map* map, const char* chars, int length,
+                         uint32_t hash);
 #endif

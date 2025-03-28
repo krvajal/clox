@@ -121,3 +121,24 @@ bool mapDelete(Map* map, ObjString* key) {
     // as tombstones are part of the size of the map
     return true;
 }
+
+ObjString* mapFindString(Map* map, const char* chars, int length,
+                         uint32_t hash) {
+    if (map->count == 0) {
+        return NULL;
+    }
+    uint32_t index = hash % map->capacity;
+    for (;;) {
+        Entry* entry = &map->entries[index];
+        if (entry->key == NULL) {
+            if (IS_NIL(entry->value)) {
+                // empty slopt without tombstone
+                return NULL;
+            }
+        } else if (entry->key->length == length && entry->key->hash == hash &&
+                   memcmp(entry->key->chars, chars, length) == 0) {
+            return entry->key;
+        }
+        index = (index + 1) % map->capacity;
+    }
+}
