@@ -32,7 +32,6 @@ void repl() {
             break;
         }
         interpret(line);
-        freeVM();
     }
 }
 
