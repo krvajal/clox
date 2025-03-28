@@ -81,6 +81,7 @@ static void number() {
 }
 
 static void errorAtCurrent(const char* message) {
+    printf("Error %s\n", message);
     // TODO
 }
 
@@ -90,6 +91,17 @@ static void consume(TokenType type, const char* message) {
         return;
     }
     errorAtCurrent(message);
+}
+
+static bool check(TokenType type) { return parser.current.type == type; }
+
+static bool match(TokenType type) {
+    printf("matching token type %d\n (%d)", type, parser.current.type);
+    if (!check(type)) {
+        return false;
+    }
+    advance();
+    return true;
 }
 
 static void expression();
@@ -112,8 +124,12 @@ static void error(const char* message) {
 
 static void parsePrecedence(Precedence precedence) {
     advance();
+    printf("processing token as prefix %d (%.*s)\n", parser.previous.type,
+           parser.previous.length, parser.previous.start);
     ParseFn prefixRule = getRule(parser.previous.type)->prefix;
     if (prefixRule == NULL) {
+        printf("No prefix rule found for token %d %s\n", parser.previous.type,
+               parser.previous.start);
         error("Expected expression.");
         return;
     }
@@ -130,6 +146,8 @@ static void parsePrecedence(Precedence precedence) {
 }
 
 static void expression() { parsePrecedence(PREC_ASSIGNMENT); }
+static void statement();
+static void declaration();
 static void grouping() {
     expression();
     consume(TOKEN_RIGHT_PAREN, "Expected ') after expression.");
@@ -230,14 +248,40 @@ ParseRule rules[] = {
     [TOKEN_NIL] = {literal, NULL, PREC_NONE},
     [TOKEN_BANG] = {unary, NULL, PREC_NONE},
     [TOKEN_STRING] = {string, NULL, PREC_NONE},
+    // [TOKEN_SEMICOLON] ://
 };
 
 static ParseRule* getRule(TokenType tokenType) { return &rules[tokenType]; }
+
+static void printStatement() {
+    expression();
+    consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
+    emitByte(OP_POP);
+}
+
+static void expressionStatement() {
+    expression();
+    consume(TOKEN_SEMICOLON, "Expect ';' after value.");
+    emitByte(OP_PRINT);
+}
+
+static void statement() {
+    if (match(TOKEN_PRINT)) {
+        printStatement();
+    } else {
+        expressionStatement();
+    }
+}
+
+static void declaration() { statement(); };
 
 bool compile(const char* source, Chunk* chunk) {
     initScanner(source);
     compilingChunk = chunk;
     advance();
+    while (!match(TOKEN_EOF)) {
+        declaration();
+    }
     expression();
     // int line = -1;
     // for (;;) {
