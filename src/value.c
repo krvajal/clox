@@ -62,6 +62,10 @@ bool valuesEqual(Value a, Value b) {
         case VAL_NUMBER:
             return AS_NUMBER(a) == AS_NUMBER(b);
         case VAL_OBJ: {
+            // strings are internalized, so we
+            // dont need to compare the strings itself
+            return AS_OBJ(a) == AS_OBJ(b);
+
             ObjString* aString = AS_STRING(a);
             ObjString* bString = AS_STRING(b);
             return aString->length == bString->length &&
