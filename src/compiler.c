@@ -96,11 +96,14 @@ static void consume(TokenType type, const char* message) {
 static bool check(TokenType type) { return parser.current.type == type; }
 
 static bool match(TokenType type) {
-    printf("matching token type %d\n (%d)", type, parser.current.type);
+    printf("\nchecking if token matches %d, got %d\n", type,
+           parser.current.type);
     if (!check(type)) {
+        printf("does not match\n");
         return false;
     }
     advance();
+    printf("it does\n");
     return true;
 }
 
@@ -124,7 +127,7 @@ static void error(const char* message) {
 
 static void parsePrecedence(Precedence precedence) {
     advance();
-    printf("processing token as prefix %d (%.*s)\n", parser.previous.type,
+    printf("\nprocessing token as prefix %d (%.*s)\n", parser.previous.type,
            parser.previous.length, parser.previous.start);
     ParseFn prefixRule = getRule(parser.previous.type)->prefix;
     if (prefixRule == NULL) {
@@ -240,7 +243,7 @@ ParseRule rules[] = {
     [TOKEN_LESS_EQUAL] = {NULL, binary, PREC_COMPARISON},
     [TOKEN_GREATER] = {NULL, binary, PREC_COMPARISON},
     [TOKEN_GREATER_EQUAL] = {NULL, binary, PREC_COMPARISON},
-    [TOKEN_EOF] = {NULL, NULL, PREC_NONE},
+    // [TOKEN_EOF] = {NULL, NULL, PREC_NONE},
     [TOKEN_IF] = {NULL, NULL, PREC_NONE},
     [TOKEN_IDENTIFIER] = {NULL, NULL, PREC_NONE},
     [TOKEN_TRUE] = {literal, NULL, PREC_NONE},
@@ -260,6 +263,7 @@ static void printStatement() {
 }
 
 static void expressionStatement() {
+    printf("parsing expression statement\n");
     expression();
     consume(TOKEN_SEMICOLON, "Expect ';' after value.");
     emitByte(OP_PRINT);
@@ -273,13 +277,17 @@ static void statement() {
     }
 }
 
-static void declaration() { statement(); };
+static void declaration() {
+    printf("parsing declaration\n");
+    statement();
+};
 
 bool compile(const char* source, Chunk* chunk) {
     initScanner(source);
     compilingChunk = chunk;
     advance();
     while (!match(TOKEN_EOF)) {
+        printf("parsing loop\n");
         declaration();
     }
     expression();
@@ -297,7 +305,7 @@ bool compile(const char* source, Chunk* chunk) {
     //         break;
     //     }
     // }
-    consume(TOKEN_EOF, "Expect end of expression.");
+    // consume(TOKEN_EOF, "Expect end of expression.");
     endCompiler();
     return !parser.hadError;
 }
