@@ -1,6 +1,7 @@
 #include "value.h"
 
 #include <stdio.h>
+#include <string.h>  // for memcmp
 
 #include "memory.h"
 #include "object.h"

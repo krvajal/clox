@@ -21,19 +21,32 @@ static Obj *allocateObject(size_t size, ObjType type) {
 #define ALLOCATE_OBJ(type, objectType) \
     (type *)allocateObject(sizeof(type), objectType)
 
-ObjString *allocateString(char *chars, int length) {
+ObjString *allocateString(char *chars, int length, uint32_t hash) {
     ObjString *objString = ALLOCATE_OBJ(ObjString, OBJ_STRING);
     objString->length = length;
     objString->chars = chars;
+    objString->hash = hash;
+}
+
+static uint32_t hashString(const char *key, int length) {
+    uint32_t hash = 2166136261u;
+    for (int i = 0; i < length; i++) {
+        hash ^= (uint8_t)key[i];
+        hash *= 16777619;
+    }
+    return hash;
 }
 
 ObjString *copyString(const char *chars, int length) {
+    uint32_t hash = hashString(chars, length);
     char *heapChars = ALLOCATE(char, length + 1);
     memcpy(heapChars, chars, length);
     heapChars[length] = '\0';
-    return allocateString(heapChars, length);
+
+    return allocateString(heapChars, length, hash);
 }
 
 ObjString *takeString(const char *chars, int length) {
-    return allocateString(chars, length);
+    uint32_t hash = hashString(chars, length);
+    return allocateString(chars, length, hash);
 }
