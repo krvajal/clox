@@ -82,7 +82,8 @@ static void number() {
 
 static void errorAtCurrent(const char* message) {
     printf("Error %s\n", message);
-    // TODO
+    parser.hadError = true;
+    parser.panicMode = true;
 }
 
 static void consume(TokenType type, const char* message) {
@@ -136,19 +137,44 @@ static void parsePrecedence(Precedence precedence) {
         error("Expected expression.");
         return;
     }
+
     prefixRule();
 
     // get the rule for the current token
     // if the rule precedence is higher that the current precedence
     // parse the infix rule
-    while (precedence <= getRule(parser.current.type)->precedence) {
+    while (precedence < getRule(parser.current.type)->precedence) {
         advance();
         ParseFn infixRule = getRule(parser.previous.type)->infix;
         infixRule();
     }
 }
 
+static uint8_t identifierConstant(Token* name) {
+    return makeConstant(OBJ_VAL(copyString(name->start, name->length)));
+}
+
+static uint8_t parseVariable(const char* errorMessage) {
+    consume(TOKEN_IDENTIFIER, errorMessage);
+    return identifierConstant(&parser.previous);
+}
+
+static void defineVariable(uint8_t global) {
+    emitBytes(OP_DEFINE_GLOBAL, global);
+}
+
 static void expression() { parsePrecedence(PREC_ASSIGNMENT); }
+static void varDeclaration() {
+    uint8_t global = parseVariable("Expect variable name.");
+    if (match(TOKEN_EQUAL)) {
+        expression();
+    } else {
+        emitByte(OP_NIL);
+    }
+    consume(TOKEN_SEMICOLON, "Expect ';' after variable declaration");
+    defineVariable(global);
+}
+
 static void statement();
 static void declaration();
 static void grouping() {
@@ -175,6 +201,13 @@ static void string() {
     int stringLength = parser.previous.length - 2;
     emitConstant(OBJ_VAL(copyString(stringStart, stringLength)));
 }
+
+static void namedVariable(Token name) {
+    uint8_t arg = identifierConstant(&name);
+    emitBytes(OP_GET_GLOBAL, arg);
+}
+
+static void variable() { namedVariable(parser.previous); }
 
 static void binary() {
     TokenType operatorType = parser.previous.type;
@@ -243,9 +276,9 @@ ParseRule rules[] = {
     [TOKEN_LESS_EQUAL] = {NULL, binary, PREC_COMPARISON},
     [TOKEN_GREATER] = {NULL, binary, PREC_COMPARISON},
     [TOKEN_GREATER_EQUAL] = {NULL, binary, PREC_COMPARISON},
-    // [TOKEN_EOF] = {NULL, NULL, PREC_NONE},
+    [TOKEN_EOF] = {NULL, NULL, PREC_NONE},
     [TOKEN_IF] = {NULL, NULL, PREC_NONE},
-    [TOKEN_IDENTIFIER] = {NULL, NULL, PREC_NONE},
+    [TOKEN_IDENTIFIER] = {variable, NULL, PREC_NONE},
     [TOKEN_TRUE] = {literal, NULL, PREC_NONE},
     [TOKEN_FALSE] = {literal, NULL, PREC_NONE},
     [TOKEN_NIL] = {literal, NULL, PREC_NONE},
@@ -259,14 +292,13 @@ static ParseRule* getRule(TokenType tokenType) { return &rules[tokenType]; }
 static void printStatement() {
     expression();
     consume(TOKEN_SEMICOLON, "Expect ';' after expression.");
-    emitByte(OP_POP);
+    emitByte(OP_PRINT);
 }
 
 static void expressionStatement() {
-    printf("parsing expression statement\n");
     expression();
     consume(TOKEN_SEMICOLON, "Expect ';' after value.");
-    emitByte(OP_PRINT);
+    emitByte(OP_POP);
 }
 
 static void statement() {
@@ -277,9 +309,39 @@ static void statement() {
     }
 }
 
+void synchronize() {
+    parser.panicMode = false;
+    while (parser.current.type != TOKEN_EOF) {
+        if (parser.previous.type == TOKEN_SEMICOLON) {
+            return;
+        }
+        switch (parser.current.type) {
+            case TOKEN_CLASS:
+            case TOKEN_FUN:
+            case TOKEN_FOR:
+            case TOKEN_IF:
+            case TOKEN_WHILE:
+            case TOKEN_PRINT:
+            case TOKEN_RETURN:
+                return;
+            default: {
+                ;  // do nothing
+            }
+        }
+        advance();
+    }
+}
+
 static void declaration() {
-    printf("parsing declaration\n");
-    statement();
+    if (match(TOKEN_VAR)) {
+        varDeclaration();
+    } else {
+        statement();
+    }
+
+    if (parser.panicMode) {
+        synchronize();
+    }
 };
 
 bool compile(const char* source, Chunk* chunk) {
@@ -290,7 +352,6 @@ bool compile(const char* source, Chunk* chunk) {
         printf("parsing loop\n");
         declaration();
     }
-    expression();
     // int line = -1;
     // for (;;) {
     //     Token token = scanToken();

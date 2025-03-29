@@ -1,6 +1,7 @@
 #include "vm.h"
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "compiler.h"
 #include "debug.h"
@@ -17,12 +18,15 @@ void initVM() {
     resetStack();
     vm.objects = NULL;
     initMap(&vm.strings);
+    initMap(&vm.globals);
 }
 
 void freeVM() {
     freeMap(&vm.strings);
+    freeMap(&vm.globals);
     freeObjects(vm.objects);
     vm.objects = NULL;
+    initVM(&vm);
 }
 
 static Value peek(int distance) { return vm.stackTop[-1 - distance]; }
@@ -45,6 +49,7 @@ static void concatenate() {
 static InterpretResult run() {
 #define READ_BYTE() (*vm.ip++)
 #define READ_CONSTANT() (vm.chunk->constants.values[READ_BYTE()])
+#define READ_STRING() AS_STRING(READ_CONSTANT())
     for (;;) {
 #define BINARY_OP(valueType, op)     \
     do {                             \
@@ -125,11 +130,28 @@ static InterpretResult run() {
                 printValue(pop());
                 printf("\n");
                 break;
+            case OP_DEFINE_GLOBAL: {
+                ObjString *name = READ_STRING();
+                mapSet(&vm.globals, name, peek(0));
+                pop();
+                break;
+            }
+            case OP_GET_GLOBAL: {
+                ObjString *name = READ_STRING();
+                Value value;
+                if (!mapGet(&vm.globals, name, &value)) {
+                    // runtimeError("Undefined variable '%s", name->chars);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
+                push(value);
+                break;
+            }
         }
     }
 #undef READ_BYTE
 #undef READ_CONSTANT
 #undef BINARY_OP
+#undef READ_STRING
 }
 
 // InterpretResult interpret(Chunk *chunk) {
