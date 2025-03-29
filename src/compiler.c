@@ -197,7 +197,7 @@ static void declareVariable() {
     }
     Token* name = &parser.previous;
     // check for double declarations
-    for (int i = current->localCount - 1; i >= 0; i++) {
+    for (int i = current->localCount - 1; i >= 0; i--) {
         Local* local = &current->locals[i];
         if (local->depth != -1 && local->depth < current->scopeDepth) {
             break;
@@ -264,15 +264,35 @@ static void string(bool canAssign) {
     emitConstant(OBJ_VAL(copyString(stringStart, stringLength)));
 }
 
+static int resolveLocal(Compiler* compiler, Token* name) {
+    for (int i = compiler->localCount - 1; i >= 0; i--) {
+        Local* local = &compiler->locals[i];
+        if (identifiersEqual(name, &local->name)) {
+            return i;
+        }
+    }
+    return -1;
+}
+
 static void namedVariable(Token name, bool canAssign) {
-    uint8_t arg = identifierConstant(&name);
     printf("parsed named variable (canAssign = %d)\n", canAssign);
+    uint8_t getOp, setOp;
+    int arg = resolveLocal(current, &name);
+    if (arg != -1) {
+        getOp = OP_GET_LOCAL;
+        setOp = OP_SET_LOCAL;
+    } else {
+        arg = identifierConstant(&name);
+        getOp = OP_GET_GLOBAL;
+        setOp = OP_SET_GLOBAL;
+    };
+
     if (canAssign && match(TOKEN_EQUAL)) {
         printf("parsing right side of assignment");
         expression();
-        emitBytes(OP_SET_GLOBAL, arg);
+        emitBytes(setOp, (uint8_t)arg);
     } else {
-        emitBytes(OP_GET_GLOBAL, arg);
+        emitBytes(getOp, (uint8_t)arg);
     }
 }
 
