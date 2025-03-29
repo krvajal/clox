@@ -145,6 +145,9 @@ static void parsePrecedence(Precedence precedence) {
         ParseFn infixRule = getRule(parser.previous.type)->infix;
         infixRule(canAssign);
     }
+    if (canAssign && match(TOKEN_EQUAL)) {
+        error("Invalid assignment target.");
+    }
 }
 
 static uint8_t identifierConstant(Token* name) {
@@ -351,11 +354,11 @@ static void declaration() {
 };
 
 bool compile(const char* source, Chunk* chunk) {
+    parser.hadError = false;
     initScanner(source);
     compilingChunk = chunk;
     advance();
     while (!match(TOKEN_EOF)) {
-        printf("parsing loop\n");
         declaration();
     }
     // int line = -1;
