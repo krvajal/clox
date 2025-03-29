@@ -97,14 +97,11 @@ static void consume(TokenType type, const char* message) {
 static bool check(TokenType type) { return parser.current.type == type; }
 
 static bool match(TokenType type) {
-    printf("\nchecking if token matches %d, got %d\n", type,
-           parser.current.type);
     if (!check(type)) {
-        printf("does not match\n");
         return false;
     }
     advance();
-    printf("it does\n");
+
     return true;
 }
 
@@ -128,12 +125,9 @@ static void error(const char* message) {
 
 static void parsePrecedence(Precedence precedence) {
     advance();
-    printf("\nprocessing token as prefix %d (%.*s)\n", parser.previous.type,
-           parser.previous.length, parser.previous.start);
+
     ParseFn prefixRule = getRule(parser.previous.type)->prefix;
     if (prefixRule == NULL) {
-        printf("No prefix rule found for token %d %s\n", parser.previous.type,
-               parser.previous.start);
         error("Expected expression.");
         return;
     }
