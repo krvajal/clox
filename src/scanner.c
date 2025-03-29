@@ -95,7 +95,7 @@ static TokenType identiferType() {
             return checkKeyword(1, 4, "hile", TOKEN_WHILE);
 
         default:
-            break;
+            return TOKEN_IDENTIFIER;
     }
 }
 
