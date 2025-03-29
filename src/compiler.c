@@ -33,7 +33,7 @@ typedef enum {
     PREC_PRIMARY
 } Precedence;
 
-typedef void (*ParseFn)();
+typedef void (*ParseFn)(bool canAssign);
 typedef struct {
     ParseFn prefix;
     ParseFn infix;
@@ -75,7 +75,7 @@ static void emitConstant(Value value) {
     emitBytes(OP_CONSTANT, makeConstant(value));
 }
 
-static void number() {
+static void number(bool canAssign) {
     double value = strtod(parser.previous.start, NULL);
     emitConstant(NUMBER_VAL(value));
 }
@@ -91,6 +91,8 @@ static void consume(TokenType type, const char* message) {
         advance();
         return;
     }
+    printf("should had token %d but instead found %d (%.*s)\n", type,
+           parser.current.type, parser.current.length, parser.current.start);
     errorAtCurrent(message);
 }
 
@@ -132,7 +134,8 @@ static void parsePrecedence(Precedence precedence) {
         return;
     }
 
-    prefixRule();
+    bool canAssign = precedence <= PREC_ASSIGNMENT;
+    prefixRule(canAssign);
 
     // get the rule for the current token
     // if the rule precedence is higher that the current precedence
@@ -140,7 +143,7 @@ static void parsePrecedence(Precedence precedence) {
     while (precedence < getRule(parser.current.type)->precedence) {
         advance();
         ParseFn infixRule = getRule(parser.previous.type)->infix;
-        infixRule();
+        infixRule(canAssign);
     }
 }
 
@@ -171,12 +174,12 @@ static void varDeclaration() {
 
 static void statement();
 static void declaration();
-static void grouping() {
+static void grouping(bool canAssign) {
     expression();
     consume(TOKEN_RIGHT_PAREN, "Expected ') after expression.");
 }
 
-static void unary() {
+static void unary(bool canAssign) {
     TokenType operatorType = parser.previous.type;
     expression();
     switch (operatorType) {
@@ -190,15 +193,17 @@ static void unary() {
     }
 }
 
-static void string() {
+static void string(bool canAssign) {
     char* stringStart = parser.previous.start + 1;
     int stringLength = parser.previous.length - 2;
     emitConstant(OBJ_VAL(copyString(stringStart, stringLength)));
 }
 
-static void namedVariable(Token name) {
+static void namedVariable(Token name, bool canAssign) {
     uint8_t arg = identifierConstant(&name);
-    if (match(TOKEN_EQUAL)) {
+    printf("parsed named variable (canAssign = %d)\n", canAssign);
+    if (canAssign && match(TOKEN_EQUAL)) {
+        printf("parsing right side of assignment");
         expression();
         emitBytes(OP_SET_GLOBAL, arg);
     } else {
@@ -206,9 +211,11 @@ static void namedVariable(Token name) {
     }
 }
 
-static void variable() { namedVariable(parser.previous); }
+static void variable(bool canAssign) {
+    namedVariable(parser.previous, canAssign);
+}
 
-static void binary() {
+static void binary(bool canAssign) {
     TokenType operatorType = parser.previous.type;
     ParseRule* rule = getRule(operatorType);
     parsePrecedence((Precedence)(rule->precedence + 1));
@@ -248,7 +255,7 @@ static void binary() {
     }
 }
 
-void literal() {
+void literal(bool canAssign) {
     switch (parser.previous.type) {
         case TOKEN_FALSE:
             return emitByte(OP_FALSE);

@@ -1,5 +1,6 @@
 #include "vm.h"
 
+#include <stdarg.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -27,6 +28,20 @@ void freeVM() {
     freeObjects(vm.objects);
     vm.objects = NULL;
     initVM(&vm);
+}
+
+static void runtimeError(const char *format, ...) {
+    va_list args;
+    va_start(args, format);
+    vfprintf(stderr, format, args);
+    va_end(args);
+    fprintf(stderr, "\n");
+
+    size_t instruction = vm.ip - vm.chunk->code - 1;
+    int line = vm.chunk->lines[instruction];
+    fprintf(stderr, "[line %d] in script\n", line);
+
+    resetStack();
 }
 
 static Value peek(int distance) { return vm.stackTop[-1 - distance]; }
@@ -140,10 +155,20 @@ static InterpretResult run() {
                 ObjString *name = READ_STRING();
                 Value value;
                 if (!mapGet(&vm.globals, name, &value)) {
-                    // runtimeError("Undefined variable '%s", name->chars);
+                    runtimeError("Undefined variable '%s'", name->chars);
                     return INTERPRET_RUNTIME_ERROR;
                 }
                 push(value);
+                break;
+            }
+            case OP_SET_GLOBAL: {
+                ObjString *name = READ_STRING();
+                // returns true is the key is new
+                if (mapSet(&vm.globals, name, peek(0))) {
+                    mapDelete(&vm.globals, name);
+                    runtimeError("Undefined variable '%s'", name->chars);
+                    return INTERPRET_RUNTIME_ERROR;
+                }
                 break;
             }
         }
@@ -170,6 +195,7 @@ InterpretResult interpret(const char *source) {
     vm.chunk = &chunk;
     vm.ip = vm.chunk->code;
 
+    printf("\nrunning...\n");
     InterpretResult result = run();
     freeChunk(&chunk);
 
